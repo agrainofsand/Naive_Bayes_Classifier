@@ -1,0 +1,63 @@
+##                        The Naïve Bayes and kNN classifiers
+
+library (e1071)
+library(mlbench)
+
+## Naive Bayes Classifier for Discrete Predictors: we use again the Congressional Voting Records of 1984
+# Note refusals to vote have been treated as missing values!
+
+data (HouseVotes84, package="mlbench") 
+model <- naiveBayes(Class ~ ., data = HouseVotes84) 
+
+# predict the outcome of the first 20 records
+predict(model, HouseVotes84[1:20,-1]) 
+
+# same but displaying posteriors
+predict(model, HouseVotes84[1:20,-1], type = "raw") 
+
+# now all of them: this is the resubstituion error
+pred <- predict(model, HouseVotes84[,-1])
+
+# form and display confusion matrix & overall accuracy
+tab <- table(pred, HouseVotes84$Class) 
+tab
+sum(tab[row(tab)==col(tab)])/sum(tab)
+
+## using Laplace smoothing: 
+model <- naiveBayes(Class ~ ., data = HouseVotes84, laplace = 3)
+pred <- predict(model, HouseVotes84[,-1]) 
+tab <- table(pred, HouseVotes84$Class) 
+sum(tab[row(tab)==col(tab)])/sum(tab)
+
+# Exercise: redo the example treating refusals to vote as another (third) value
+
+## Example with metric predictors: 
+
+data(iris) 
+m <- naiveBayes (Species ~ ., data = iris) 
+tab <- table(predict(m, iris[,-5]), iris[,5]) 
+sum(tab[row(tab)==col(tab)])/sum(tab)
+
+## the kNN classifier
+
+library (class)
+data(iris3)
+
+# 1. using a separate test set
+train <- rbind(iris3[1:25,,1], iris3[1:25,,2], iris3[1:25,,3]) 
+test <- rbind(iris3[26:50,,1], iris3[26:50,,2], iris3[26:50,,3]) 
+cl <- factor(c(rep("s",25), rep("c",25), rep("v",25))) 
+myknn <- knn(train, test, cl, k = 3, prob=TRUE) 
+attributes(.Last.value) 
+tab <- table(myknn, cl) 
+sum(tab[row(tab)==col(tab)])/sum(tab)
+
+# one can use 'knn1' when k=1
+
+# 2. using LOOCV
+
+train <- rbind(iris3[,,1], iris3[,,2], iris3[,,3]) 
+cl <- factor(c(rep("s",50), rep("c",50), rep("v",50)))
+myknn.cv <- knn.cv(train, cl, k = 3, prob = TRUE)
+tab <- table(myknn.cv, cl) 
+sum(tab[row(tab)==col(tab)])/sum(tab)
